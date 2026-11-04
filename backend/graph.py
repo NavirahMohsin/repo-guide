@@ -27,21 +27,31 @@ load_dotenv(BASE_DIR / ".env")
 
 
 # --------------------------------------------------
-# 2. INITIALIZE GROQ LLM
+# 2. GROQ LLM - Lazy initialization
 # --------------------------------------------------
 
-api_key = os.getenv("GROQ_API_KEY")
+_llm = None
 
-if not api_key:
-    raise ValueError("GROQ_API_KEY not found in .env")
-
-
-llm = ChatGroq(
-    model="openai/gpt-oss-120b",
-    temperature=0,
-    api_key=api_key
-)
-
+def get_llm():
+    """Get or initialize the Groq LLM instance."""
+    global _llm
+    
+    if _llm is None:
+        api_key = os.getenv("GROQ_API_KEY")
+        
+        if not api_key:
+            raise ValueError(
+                "GROQ_API_KEY not found. "
+                "Please set it in .env file (local) or Streamlit secrets (cloud)."
+            )
+        
+        _llm = ChatGroq(
+            model="openai/gpt-oss-120b",
+            temperature=0,
+            api_key=api_key
+        )
+    
+    return _llm
 
 # --------------------------------------------------
 # 3. CREATE DYNAMIC RAG TOOL
@@ -214,6 +224,9 @@ async def build_graph(repo_id: str, repo_path: str):
         repo_id: Unique repository identifier
         repo_path: Path to the repository
     """
+
+    # Get LLM instance (lazy initialization)
+    llm = get_llm()
 
     mcp_tools = await get_mcp_tools(repo_path)
 

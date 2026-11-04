@@ -36,8 +36,33 @@ from dotenv import load_dotenv
 load_dotenv(BASE_DIR / ".env")
 
 # For Streamlit Cloud, use st.secrets
-if "GROQ_API_KEY" in st.secrets:
-    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+try:
+    if "GROQ_API_KEY" in st.secrets:
+        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+except Exception:
+    # st.secrets not available (running locally without secrets.toml)
+    pass
+
+# Verify API key is available
+if not os.getenv("GROQ_API_KEY"):
+    st.error("""
+    ⚠️ **GROQ_API_KEY not found!**
+    
+    **For local development:**
+    - Create a `.env` file in the project root
+    - Add: `GROQ_API_KEY=your_api_key_here`
+    
+    **For Streamlit Cloud:**
+    - Go to app settings
+    - Click "Secrets" in the sidebar
+    - Add:
+    ```
+    GROQ_API_KEY = "your_api_key_here"
+    ```
+    
+    Get your free API key at: https://console.groq.com/
+    """)
+    st.stop()
 
 
 # ==================================================
