@@ -1,0 +1,13 @@
+# Minimal requirements for troubleshooting
+streamlit
+langchain
+langchain-groq
+langchain-chroma
+langchain-huggingface
+langgraph
+chromadb
+sentence-transformers
+python-dotenv
+GitPython
+pypdf
+mcp
