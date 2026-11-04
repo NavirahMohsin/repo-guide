@@ -1,0 +1,15 @@
+venv/
+.env
+__pycache__/
+*.pyc
+data/chroma_db/
+.streamlit/secrets.toml
+repositories/
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+sample_repo/
