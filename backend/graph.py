@@ -6,6 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import tool
 
@@ -37,40 +38,60 @@ def get_llm():
     global _llm
     
     if _llm is None:
-        api_key = os.getenv("GOOGLE_API_KEY")
+        google_api_key = os.getenv("GOOGLE_API_KEY")
+        groq_api_key = os.getenv("GROQ_API_KEY")
         
-        if not api_key:
+        if not google_api_key and not groq_api_key:
             raise ValueError(
-                "GOOGLE_API_KEY not found. "
-                "Please set it in .env file (local) or Streamlit secrets (cloud)."
+                "Neither GOOGLE_API_KEY nor GROQ_API_KEY found. "
+                "Please set at least one in .env file (local) or Streamlit secrets (cloud)."
             )
         
-        # Primary model - latest Gemini Flash
-        primary_llm = ChatGoogleGenerativeAI(
-            model="gemini-3.8-flash",
-            temperature=0,
-            api_key=api_key,
-            max_retries=4  # Retry more aggressively for 503 spikes
-        )
+        # Primary models - Gemini (with fallbacks)
+        fallback_chain = []
         
-        # Fallback model 1 - Gemini 4 Hydrogen (stable)
-        backup_llm_1 = ChatGoogleGenerativeAI(
-            model="gemini-4-hydrogen",
-            temperature=0,
-            api_key=api_key,
-            max_retries=4
-        )
+        if google_api_key:
+            # Primary model - latest Gemini Flash
+            primary_llm = ChatGoogleGenerativeAI(
+                model="gemini-3.8-flash",
+                temperature=0,
+                api_key=google_api_key,
+                max_retries=4  # Retry more aggressively for 503 spikes
+            )
+            
+            # Fallback model 1 - Gemini 4 Hydrogen
+            backup_llm_1 = ChatGoogleGenerativeAI(
+                model="gemini-4-hydrogen",
+                temperature=0,
+                api_key=google_api_key,
+                max_retries=4
+            )
+            
+            # Fallback model 2 - Gemini 3.5 Flash Lite
+            backup_llm_2 = ChatGoogleGenerativeAI(
+                model="gemini-3.5-flash-lite",
+                temperature=0,
+                api_key=google_api_key,
+                max_retries=4
+            )
+            
+            fallback_chain = [primary_llm, backup_llm_1, backup_llm_2]
         
-        # Fallback model 2 - Gemini 3.5 Flash Lite (most stable, proven)
-        backup_llm_2 = ChatGoogleGenerativeAI(
-            model="gemini-3.5-flash-lite",
-            temperature=0,
-            api_key=api_key,
-            max_retries=4
-        )
+        # Ultimate fallback - Groq (most reliable)
+        if groq_api_key:
+            groq_llm = ChatGroq(
+                model="openai/gpt-oss-120b",
+                temperature=0,
+                api_key=groq_api_key,
+                max_retries=3
+            )
+            fallback_chain.append(groq_llm)
         
-        # Chain with fallbacks - automatically switches on 503/429 errors
-        _llm = primary_llm.with_fallbacks([backup_llm_1, backup_llm_2])
+        # Build the fallback chain
+        if len(fallback_chain) == 1:
+            _llm = fallback_chain[0]
+        else:
+            _llm = fallback_chain[0].with_fallbacks(fallback_chain[1:])
     
     return _llm
 
