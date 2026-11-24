@@ -3,7 +3,7 @@ import os
 import json
 
 from pathlib import Path
-
+#pdf
 from pypdf import PdfReader
 
 from langchain_core.documents import Document
