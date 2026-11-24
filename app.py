@@ -39,28 +39,37 @@ load_dotenv(BASE_DIR / ".env")
 try:
     if "GOOGLE_API_KEY" in st.secrets:
         os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+    if "GROQ_API_KEY" in st.secrets:
+        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
 except Exception:
     # st.secrets not available (running locally without secrets.toml)
     pass
 
-# Verify API key is available
-if not os.getenv("GOOGLE_API_KEY"):
+# Verify at least one API key is available
+if not os.getenv("GOOGLE_API_KEY") and not os.getenv("GROQ_API_KEY"):
     st.error("""
-    ⚠️ **GOOGLE_API_KEY not found!**
+    ⚠️ **No API keys found!**
     
     **For local development:**
     - Create a `.env` file in the project root
-    - Add: `GOOGLE_API_KEY=your_api_key_here`
+    - Add at least one:
+    ```
+    GOOGLE_API_KEY=your_key_here
+    GROQ_API_KEY=your_key_here
+    ```
     
     **For Streamlit Cloud:**
     - Go to app settings
     - Click "Secrets" in the sidebar
-    - Add:
+    - Add at least one:
     ```
-    GOOGLE_API_KEY = "your_api_key_here"
+    GOOGLE_API_KEY = "your_key_here"
+    GROQ_API_KEY = "your_key_here"
     ```
     
-    Get your free API key at: https://ai.google.dev/
+    Get API keys at:
+    - Google: https://ai.google.dev/
+    - Groq: https://console.groq.com/
     """)
     st.stop()
 
@@ -208,7 +217,7 @@ if st.sidebar.button("Clear Chat", use_container_width=True):
 st.sidebar.divider()
 
 st.sidebar.caption(
-    "Powered by LangGraph, Gemini 3.8 Flash, MCP, "
+    "Powered by LangGraph, Gemini + Groq (fallback), MCP, "
     "ChromaDB and Sentence Transformers."
 )
 
