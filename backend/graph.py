@@ -56,7 +56,7 @@ def get_llm():
                 model="gemini-3.8-flash",
                 temperature=0,
                 api_key=google_api_key,
-                max_retries=4  # Retry more aggressively for 503 spikes
+                max_retries=2  # Retry more aggressively for 503 spikes
             )
             
             # Fallback model 1 - Gemini 4 Hydrogen
@@ -64,7 +64,7 @@ def get_llm():
                 model="gemini-4-hydrogen",
                 temperature=0,
                 api_key=google_api_key,
-                max_retries=4
+                max_retries=2
             )
             
             # Fallback model 2 - Gemini 3.5 Flash Lite
@@ -72,7 +72,7 @@ def get_llm():
                 model="gemini-3.5-flash-lite",
                 temperature=0,
                 api_key=google_api_key,
-                max_retries=4
+                max_retries=2
             )
             
             fallback_chain = [primary_llm, backup_llm_1, backup_llm_2]
