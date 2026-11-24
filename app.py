@@ -208,7 +208,7 @@ if st.sidebar.button("Clear Chat", use_container_width=True):
 st.sidebar.divider()
 
 st.sidebar.caption(
-    "Powered by LangGraph, Gemini 2.0 Flash, MCP, "
+    "Powered by LangGraph, Gemini 3.8 Flash, MCP, "
     "ChromaDB and Sentence Transformers."
 )
 
