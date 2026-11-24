@@ -27,13 +27,13 @@ load_dotenv(BASE_DIR / ".env")
 
 
 # --------------------------------------------------
-# 2. GOOGLE GENERATIVE AI LLM - Lazy initialization
+# 2. GOOGLE GENERATIVE AI LLM - Lazy initialization with Fallbacks
 # --------------------------------------------------
 
 _llm = None
 
 def get_llm():
-    """Get or initialize the Google Generative AI LLM instance."""
+    """Get or initialize the Google Generative AI LLM with fallback models."""
     global _llm
     
     if _llm is None:
@@ -45,11 +45,32 @@ def get_llm():
                 "Please set it in .env file (local) or Streamlit secrets (cloud)."
             )
         
-        _llm = ChatGoogleGenerativeAI(
+        # Primary model - latest Gemini Flash
+        primary_llm = ChatGoogleGenerativeAI(
             model="gemini-3.8-flash",
             temperature=0,
-            api_key=api_key
+            api_key=api_key,
+            max_retries=4  # Retry more aggressively for 503 spikes
         )
+        
+        # Fallback model 1 - Gemini 2.0 Flash (stable)
+        backup_llm_1 = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
+            temperature=0,
+            api_key=api_key,
+            max_retries=4
+        )
+        
+        # Fallback model 2 - Gemini 1.5 Flash (most stable, proven)
+        backup_llm_2 = ChatGoogleGenerativeAI(
+            model="gemini-1.5-flash",
+            temperature=0,
+            api_key=api_key,
+            max_retries=4
+        )
+        
+        # Chain with fallbacks - automatically switches on 503/429 errors
+        _llm = primary_llm.with_fallbacks([backup_llm_1, backup_llm_2])
     
     return _llm
 
@@ -289,7 +310,7 @@ async def build_graph(repo_id: str, repo_path: str):
     # --------------------------------------------------
 
     async def agent_node(state: MessagesState):
-        # Limit conversation history to last 6 messages (Gemini 2.0 Flash has 1M token context)
+        # Limit conversation history to last 6 messages (Gemini has 1M+ token context)
         recent_messages = state["messages"][-6:]
         
         messages = [
@@ -306,7 +327,7 @@ async def build_graph(repo_id: str, repo_path: str):
             error_msg = str(e)
             
             # Provide helpful error messages
-            if "413" in error_msg or "context" in error_msg.lower():
+            if "context" in error_msg.lower():
                 error_response = (
                     "I encountered a context length error. "
                     "Please try:\n"
@@ -321,9 +342,16 @@ async def build_graph(repo_id: str, repo_path: str):
                     "2. Missing required parameters\n"
                     "Please try rephrasing your question or ask about a specific file."
                 )
-            elif "rate_limit" in error_msg.lower():
+            elif "rate_limit" in error_msg.lower() or "429" in error_msg:
                 error_response = (
-                    "Rate limit exceeded. Please wait a moment and try again."
+                    "Rate limit exceeded. The system automatically tried backup models. "
+                    "Please wait a moment and try again."
+                )
+            elif "503" in error_msg or "unavailable" in error_msg.lower():
+                error_response = (
+                    "The model service is temporarily overloaded. "
+                    "The system automatically tried backup models. "
+                    "Please wait a moment and try again."
                 )
             else:
                 error_response = f"An error occurred: {error_msg}"
