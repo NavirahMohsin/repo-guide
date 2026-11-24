@@ -53,17 +53,17 @@ def get_llm():
             max_retries=4  # Retry more aggressively for 503 spikes
         )
         
-        # Fallback model 1 - Gemini 2.0 Flash (stable)
+        # Fallback model 1 - Gemini 4 Hydrogen (stable)
         backup_llm_1 = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model="gemini-4-hydrogen",
             temperature=0,
             api_key=api_key,
             max_retries=4
         )
         
-        # Fallback model 2 - Gemini 1.5 Flash (most stable, proven)
+        # Fallback model 2 - Gemini 3.5 Flash Lite (most stable, proven)
         backup_llm_2 = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
+            model="gemini-3.5-flash-lite",
             temperature=0,
             api_key=api_key,
             max_retries=4
