@@ -37,30 +37,30 @@ load_dotenv(BASE_DIR / ".env")
 
 # For Streamlit Cloud, use st.secrets
 try:
-    if "GROQ_API_KEY" in st.secrets:
-        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+    if "GOOGLE_API_KEY" in st.secrets:
+        os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 except Exception:
     # st.secrets not available (running locally without secrets.toml)
     pass
 
 # Verify API key is available
-if not os.getenv("GROQ_API_KEY"):
+if not os.getenv("GOOGLE_API_KEY"):
     st.error("""
-    ⚠️ **GROQ_API_KEY not found!**
+    ⚠️ **GOOGLE_API_KEY not found!**
     
     **For local development:**
     - Create a `.env` file in the project root
-    - Add: `GROQ_API_KEY=your_api_key_here`
+    - Add: `GOOGLE_API_KEY=your_api_key_here`
     
     **For Streamlit Cloud:**
     - Go to app settings
     - Click "Secrets" in the sidebar
     - Add:
     ```
-    GROQ_API_KEY = "your_api_key_here"
+    GOOGLE_API_KEY = "your_api_key_here"
     ```
     
-    Get your free API key at: https://console.groq.com/
+    Get your free API key at: https://ai.google.dev/
     """)
     st.stop()
 
@@ -208,7 +208,7 @@ if st.sidebar.button("Clear Chat", use_container_width=True):
 st.sidebar.divider()
 
 st.sidebar.caption(
-    "Powered by LangGraph, Groq, MCP, "
+    "Powered by LangGraph, Gemini 2.0 Flash, MCP, "
     "ChromaDB and Sentence Transformers."
 )
 
@@ -543,5 +543,5 @@ if prompt:
             st.session_state.messages.pop()
 
             st.info(
-                "Try a more specific question or check if you're hitting Groq API limits (413 error)."
+                "Try a more specific question or check if you're hitting API limits."
             )

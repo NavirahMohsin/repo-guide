@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import tool
 
@@ -27,26 +27,26 @@ load_dotenv(BASE_DIR / ".env")
 
 
 # --------------------------------------------------
-# 2. GROQ LLM - Lazy initialization
+# 2. GOOGLE GENERATIVE AI LLM - Lazy initialization
 # --------------------------------------------------
 
 _llm = None
 
 def get_llm():
-    """Get or initialize the Groq LLM instance."""
+    """Get or initialize the Google Generative AI LLM instance."""
     global _llm
     
     if _llm is None:
-        api_key = os.getenv("GROQ_API_KEY")
+        api_key = os.getenv("GOOGLE_API_KEY")
         
         if not api_key:
             raise ValueError(
-                "GROQ_API_KEY not found. "
+                "GOOGLE_API_KEY not found. "
                 "Please set it in .env file (local) or Streamlit secrets (cloud)."
             )
         
-        _llm = ChatGroq(
-            model="openai/gpt-oss-120b",
+        _llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
             temperature=0,
             api_key=api_key
         )
@@ -102,6 +102,7 @@ def wrap_mcp_tool(tool):
     # Get the original function - handle different tool types
     if hasattr(tool, 'func'):
         original_func = tool.func
+    #async
     elif hasattr(tool, 'coroutine'):
         original_func = tool.coroutine
     elif callable(tool):
@@ -288,8 +289,8 @@ async def build_graph(repo_id: str, repo_path: str):
     # --------------------------------------------------
 
     async def agent_node(state: MessagesState):
-        # Limit conversation history to last 4 messages for Groq's 8K token limit
-        recent_messages = state["messages"][-4:]
+        # Limit conversation history to last 6 messages (Gemini 2.0 Flash has 1M token context)
+        recent_messages = state["messages"][-6:]
         
         messages = [
             SystemMessage(content=system_prompt)
@@ -307,7 +308,7 @@ async def build_graph(repo_id: str, repo_path: str):
             # Provide helpful error messages
             if "413" in error_msg or "context" in error_msg.lower():
                 error_response = (
-                    "I encountered a context length error (Groq's 8K token limit exceeded). "
+                    "I encountered a context length error. "
                     "Please try:\n"
                     "1. Asking a more specific question\n"
                     "2. Focusing on a specific file or topic\n"

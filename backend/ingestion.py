@@ -137,15 +137,15 @@ def load_repository(repo_path):
 
 
 def split_documents(documents):
-    # Reduced chunk size for Groq's 8K token limit
+    # Chunk size optimized for semantic search
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,  # Reduced from 1000
-        chunk_overlap=50,  # Reduced from 150
+        chunk_size=500,
+        chunk_overlap=50,
         separators=["\n\n", "\n", " ", ""]
     )
 
     cleaned_documents = []
-
+    #invalid utf-8 characters
     for document in documents:
         clean_content = (
             document.page_content
